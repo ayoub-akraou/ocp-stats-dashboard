@@ -1,1 +1,0 @@
-# ocp-stats-dashboard
