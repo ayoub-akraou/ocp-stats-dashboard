@@ -1,16 +1,29 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-import "./App.css";
-
 import Login from "./pages/login";
+import Alert from "./components/Logo/Alert";
 
-function App() {
+// context
+import { AlertProvider, useAlert } from "./context/AlertContext";
+function AppContent() {
+	const { alert } = useAlert();
 	return (
-		<Router>
+		<>
+			{alert && <Alert type={alert.type} message={alert.message} />}
 			<Routes>
 				<Route path="/login" element={<Login />} />
 			</Routes>
-		</Router>
+		</>
+	);
+}
+
+function App() {
+	return (
+		<AlertProvider>
+			<Router>
+				<AppContent />
+			</Router>
+		</AlertProvider>
 	);
 }
 
