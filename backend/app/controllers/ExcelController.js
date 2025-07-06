@@ -66,7 +66,7 @@ class ExcelController {
 					const moyenneConso = totalConso / 5;
 					const moyenneStock = totalStock / 5;
 
-					const tauxRotation = moyenneStock ? moyenneConso / moyenneStock : 0;
+					const tauxRotation = moyenneStock ? (moyenneConso / moyenneStock) * 100 : Infinity;
 
 					return {
 						article: article.ARTICLE,
@@ -74,18 +74,18 @@ class ExcelController {
 						categorie: article["CATEGORIE ACHAT"] || "",
 						gestion: article["CLASSE HOMOGENE DE GESTION"] || "",
 						unite: article.Udm,
-						moyenneStock: Number(moyenneStock.toFixed(2)),
-						moyenneConso: Number(moyenneConso.toFixed(2)),
-						tauxRotation: Number(tauxRotation.toFixed(4)),
+						moyenneStock: Number(moyenneStock.toFixed(2)) + " " + article.Udm,
+						moyenneConso: Number(moyenneConso.toFixed(2)) + " " + article.Udm,
+						tauxRotation: Number(tauxRotation.toFixed(4)) + " %",
 					};
 				})
-				.sort((a, b) => a.tauxRotation - b.tauxRotation);
+				.sort((a, b) => parseFloat(a.tauxRotation) - parseFloat(b.tauxRotation));
 
 			const lowRotation = rotationStocks.slice(0, 10);
 
 			const topRotation = rotationStocks.slice(-10);
 
-			///////////////////////////////// couvertureStocks /////////////////////////////////
+			///////////////////////////////// couverture de Stocks /////////////////////////////////
 
 			const couvertureStocks = data.map((article) => {
 				// Moyenne de consommation mensuelle (sur 5 ans)
@@ -103,10 +103,10 @@ class ExcelController {
 				// Calcul du taux de couverture
 				const tauxCouverture =
 					consommationMoyenneMensuelle > 0
-						? stockActuel / consommationMoyenneMensuelle
+						? (stockActuel / consommationMoyenneMensuelle) * 100
 						: stockActuel > 0
-						? Infinity // Stock dormant (consommation nulle mais stock présent)
-						: 0; // Stock et consommation nuls
+						? "Infinity"
+						: 0;
 
 				// ✅ Interprétation avec cas spécial pour les stocks dormants
 				let niveauCouverture = "";
@@ -115,7 +115,7 @@ class ExcelController {
 				if (tauxCouverture === 0) {
 					niveauCouverture = "rupture";
 					niveauCouvertureColor = "red";
-				} else if (tauxCouverture === Infinity) {
+				} else if (tauxCouverture === "Infinity") {
 					niveauCouverture = "stock dormant (non utilisé)";
 					niveauCouvertureColor = "purple"; // Couleur distincte pour ce cas
 				} else if (tauxCouverture < 1) {
@@ -138,24 +138,49 @@ class ExcelController {
 					categorie: article["CATEGORIE ACHAT"] || "",
 					gestion: article["CLASSE HOMOGENE DE GESTION"] || "",
 					unite: article["Udm"],
-					stockActuel,
-					consommationMoyenneMensuelle,
-					tauxCouverture: Number(tauxCouverture.toFixed(2)), // arrondi à 2 chiffres
+					stockActuel: stockActuel.toFixed(2),
+					consommationMoyenneMensuelle: consommationMoyenneMensuelle.toFixed(2),
+					tauxCouverture: tauxCouverture == "Infinity" ? tauxCouverture : tauxCouverture.toFixed(2) + " %", // arrondi à 2 chiffres
 					niveauCouverture,
 					niveauCouvertureColor,
 				};
 			});
 
+			///////////////////////////////// valeur du stock /////////////////////////////////
+
+			let valeurStockTotale = 0;
+			const valeurParArticle = data
+				.map((article) => {
+					const stock = Math.max(article["SommeDeSTOCK AE"] || 0, 0); // pour eviter les valeurs negatifs
+					const pmp = article["PMP"] || 0;
+					const valeur = stock * pmp;
+
+					valeurStockTotale += valeur;
+
+					return {
+						article: article["ARTICLE"],
+						description: article["DESCRIPTION"],
+						unite: article["Udm"],
+						stock,
+						pmp,
+						valeur: Number(valeur.toFixed(2)),
+					};
+				})
+				.sort((a, b) => a.valeur - b.valeur);
+
 			res.status(200).json({
-				// // rupture
-				// tauxRupture,
-				// ruptures,
-				// // rotationStocks
-				// rotationStocks,
-				// topRotation,
-				// lowRotation,
-				// // couvertureStocks
+				// rupture
+				tauxRupture: tauxRupture.toFixed(2) + " %",
+				ruptures,
+				// rotationStocks
+				rotationStocks,
+				topRotation,
+				lowRotation,
+				// couvertureStocks
 				couvertureStocks,
+				// valeurStock
+				valeurStockTotale: (valeurStockTotale / 1_000_000).toFixed(2) + " MDh",
+				valeurParArticle,
 			});
 		} catch (error) {
 			console.error("Erreur dans getStats :", error);
