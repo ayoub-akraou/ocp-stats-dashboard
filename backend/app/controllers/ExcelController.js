@@ -168,6 +168,28 @@ class ExcelController {
 				})
 				.sort((a, b) => a.valeur - b.valeur);
 
+			///////////////////////////////// valeur du stock non mouvementés /////////////////////////////////
+
+			const stockNonMouvementes = data
+				.filter((article) => {
+					const consoTotale =
+						(article["SommeDeCONS AE"] || 0) +
+						(article["SommeDeCONS A-1"] || 0) +
+						(article["SommeDeCONS A-2"] || 0) +
+						(article["SommeDeCONS A-3"] || 0) +
+						(article["SommeDeCONS A-4"] || 0);
+
+					const stock = article["SommeDeSTOCK AE"] || 0;
+					return consoTotale === 0 && stock > 0;
+				})
+				.map((article) => {
+					return { valeur: (article["SommeDeSTOCK AE"] || 0) * (article["PMP"] || 0), ...article };
+				});
+
+			const ValeurStockNonMouvementes =
+				(stockNonMouvementes.reduce((total, article) => (total += article.valeur), 0) / 1_000_000).toFixed(2) +
+				" MDh";
+
 			res.status(200).json({
 				// rupture
 				tauxRupture: tauxRupture.toFixed(2) + " %",
@@ -181,6 +203,9 @@ class ExcelController {
 				// valeurStock
 				valeurStockTotale: (valeurStockTotale / 1_000_000).toFixed(2) + " MDh",
 				valeurParArticle,
+				// valeur de stock non mouvementés
+				ValeurStockNonMouvementes,
+				stockNonMouvementes,
 			});
 		} catch (error) {
 			console.error("Erreur dans getStats :", error);
