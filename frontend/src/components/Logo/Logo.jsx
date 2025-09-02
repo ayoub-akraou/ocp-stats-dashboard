@@ -3,7 +3,8 @@ import React from "react";
 const style = {
 	stroke: "none",
 	fillRule: "nonzero",
-	fill: "rgb(20%,62.745098%,17.254902%)",
+	// fill: "rgb(20%,62.745098%,17.254902%)",
+	fill: "#fff",
 	fillOpacity: 1,
 };
 export default function Logo() {

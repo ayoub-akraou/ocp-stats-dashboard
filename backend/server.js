@@ -14,11 +14,10 @@ app.use(
 app.use(express.json());
 
 const authRoutes = require("./app/routes/auth.routes");
-const ExcelController = require("./app/controllers/ExcelController");
+const statsRoutes = require("./app/routes/stats.routes");
 
 app.use("/api", authRoutes);
-
-app.get("/api/stats", ExcelController.getStats);
+app.use("/api/stats", statsRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Serveur lancé sur le port ${PORT}`));

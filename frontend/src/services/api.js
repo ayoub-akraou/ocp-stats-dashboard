@@ -1,6 +1,5 @@
-export default async function fetchApi(endpoint, method = "GET", body, headers = {}, setLoading, setError, showAlert) {
+export default async function fetchApi(endpoint, method = "GET", body, headers = {}, setLoading, showAlert = () => {}) {
 	if (setLoading) setLoading(true);
-	if (setError) setError(null);
 	try {
 		const response = await fetch(`http://localhost:3000/api${endpoint}`, {
 			method,
@@ -21,7 +20,6 @@ export default async function fetchApi(endpoint, method = "GET", body, headers =
 		showAlert(data.message);
 		return data;
 	} catch (err) {
-		if (setError) setError(err.message);
 		showAlert(err.message, "danger");
 		throw err.message;
 	} finally {
@@ -29,8 +27,8 @@ export default async function fetchApi(endpoint, method = "GET", body, headers =
 	}
 }
 
-export async function login(username, password, setLoading, setError, showAlert) {
-	const data = await fetchApi("/login", "POST", { username, password }, {}, setLoading, setError, showAlert);
+export async function login(username, password, setLoading, showAlert) {
+	const data = await fetchApi("/login", "POST", { username, password }, {}, setLoading, showAlert);
 	if (data.token) {
 		localStorage.setItem("token", data.token);
 	}
